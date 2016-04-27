@@ -338,7 +338,7 @@ let runHook = function (hookFn, origFn, before, after) {
                 .catch((e) => {
                     console.error(`Error in afterHook: [${e}]`)
                 })
-            }).then(() => done(), done)
+            }).then(() => done(), done.fail ? done.fail : done)
         })
     }
 
@@ -366,7 +366,7 @@ let runHook = function (hookFn, origFn, before, after) {
                     console.error(`Error in afterHook: [${e}]`)
                 })
             })
-            .then(() => done(), done)
+            .then(() => done(), done.fail ? done.fail : done)
     })
 }
 
@@ -387,8 +387,16 @@ let runSpec = function (specTitle, specFn, origFn) {
 
     return origFn(specTitle, function (done) {
         Fiber(() => {
-            specFn.call(this)
-            done()
+            try {
+                specFn.call(this)
+                done()
+            } catch (e) {
+                if (done.fail) {
+                    done.fail(e)
+                } else {
+                    done(e)
+                }
+            }
         }).run()
     })
 }
